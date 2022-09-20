@@ -1,38 +1,41 @@
-import express from "express";
-import cors from "cors";
-import { ApolloServer } from "apollo-server-express";
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+import { ApolloServer } from "apollo-server";
+import { ApolloServerPluginLandingPageLocalDefault } from "apollo-server-core";
 
-import dbConnection from "./db/connection";
 import typeDefs from "./graphql/typeDefs";
 import resolvers from "./graphql/resolvers";
 
-const startServer = async () => {
-    try {
-        await dbConnection();
-        const app = express();
-        app.use(cors())
+dotenv.config();
 
-        const server = new ApolloServer({
-        typeDefs,
-        resolvers,
-        csrfPrevention: true,
-        cache: 'bounded',
-        });
+const PORT = process.env.PORT || 8080
+const MONGODB_URL = process.env.MONGODB_URL
 
-        await server.start();
-        server.applyMiddleware({ app });
+mongoose.connect(MONGODB_URL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+});
 
-        app.use((req, res) => {
-        res.status(200);
-        res.send("Welcome Todo App");
-        res.end();
-        });
+const database = mongoose.connection;
 
-        await new Promise((resolve) => app.listen({ port: 4000 }, resolve));
-        console.log(`🚀 Server ready at http://localhost:4000${server.graphqlPath}`);
-    } catch (err) {
-        console.log(err)
-    }
-};
+database.on('error', (error) => {
+    console.log("An error occured while trying to connect to the database", error)
+})
 
-startServer();
+database.once('connected', () => {
+    console.log("🐣  Successful database connection");
+})
+
+const server = new ApolloServer({
+    typeDefs,
+    resolvers,
+    csrfPrevention: true,
+    cache: 'bounded',
+    plugins: [
+        ApolloServerPluginLandingPageLocalDefault({ embed: true }),
+    ],
+});
+
+server.listen({ port: PORT }).then(({ url }) => {
+    console.log(`🚀  Server is ready at ${url}\n📭  Query at https://studio.apollographql.com/dev`)
+});
