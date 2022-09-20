@@ -37,5 +37,5 @@ const server = new ApolloServer({
 });
 
 server.listen({ port: PORT }).then(({ url }) => {
-    console.log(`🚀  Server is ready at ${url}\n📭  Query at https://studio.apollographql.com/dev`)
+    console.log(`🚀  Server is ready at ${url}`)
 });
